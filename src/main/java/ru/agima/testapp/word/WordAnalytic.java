@@ -1,6 +1,8 @@
 package ru.agima.testapp.word;
 
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -37,12 +39,15 @@ public class WordAnalytic {
     }
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
+        if (!ArrayUtils.isSameLength(args, 2)) {
+            throw new IllegalArgumentException(String.format("expected 2 arguments but found %d", ArrayUtils.getLength(args)));
+        }
+        Path target = Paths.get(args[0]);
+        Pattern pattern = Pattern.compile(String.format("(\\b[А-Яа-яA-Za-z][А-Яа-яA-Za-z\\d-]{%s}\\b)", args[1]));
         ForkJoinPool customThreadPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-
-        Pattern pattern = Pattern.compile("(\\b[А-Яа-яA-Za-z][А-Яа-яA-Za-z\\d-]{4}\\b)");
         customThreadPool.submit(() -> {
-            try (Stream<Path> walk = Files.walk(Paths.get("D:\\WORD"))) {
+            try (Stream<Path> walk = Files.walk(target)) {
                 List<KeyValuePair> collect = walk.parallel()
                         .filter(Files::isRegularFile)
                         .flatMap(path -> getFileWordCount(path.toFile(), pattern).entrySet().stream())
