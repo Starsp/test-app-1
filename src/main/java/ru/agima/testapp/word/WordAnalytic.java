@@ -1,4 +1,4 @@
-package dto.word;
+package ru.agima.testapp.word;
 
 
 import java.io.BufferedReader;

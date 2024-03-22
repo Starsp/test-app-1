@@ -1,4 +1,4 @@
-package dto.word;
+package ru.agima.testapp.word;
 
 public class WordAnalyticException extends RuntimeException {
 
