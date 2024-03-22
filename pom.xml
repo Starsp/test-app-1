@@ -13,20 +13,6 @@
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
 
-
-    <dependencies>
-        <dependency>
-            <groupId>org.openapitools</groupId>
-            <artifactId>jackson-databind-nullable</artifactId>
-            <version>0.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-ui</artifactId>
-            <version>1.7.0</version>
-        </dependency>
-    </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -43,32 +29,6 @@
                         </manifest>
                     </archive>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.openapitools</groupId>
-                <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.1.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>
-                                D:\untitled\src\main\resources\NBRB.RW.TSP.GET.partiesByloginResponse.001.00.json
-                            </inputSpec>
-                            <generatorName>spring</generatorName>
-                            <apiPackage>com.baeldung.openapi.api</apiPackage>
-                            <modelPackage>com.baeldung.openapi.model</modelPackage>
-                            <supportingFilesToGenerate>
-                                ApiUtil.java
-                            </supportingFilesToGenerate>
-                            <configOptions>
-                                <delegatePattern>true</delegatePattern>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
