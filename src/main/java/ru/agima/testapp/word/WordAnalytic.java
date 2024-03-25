@@ -41,27 +41,33 @@ public class WordAnalytic {
 
     public static void main(String[] args) {
         if (!ArrayUtils.isSameLength(args, 2)) {
-            throw new IllegalArgumentException(String.format("expected 2 arguments but found %d", ArrayUtils.getLength(args)));
+            throw new IllegalArgumentException(String.format("Expected 2 arguments but found %d", ArrayUtils.getLength(args)));
         }
-        Path target = Paths.get(args[0]);
-        Pattern pattern = Pattern.compile(String.format("(\\b[А-Яа-яA-Za-z][А-Яа-яA-Za-z\\d-]{%s}\\b)", args[1]));
-        ForkJoinPool customThreadPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-        customThreadPool.submit(() -> {
-            try (Stream<Path> walk = Files.walk(target)) {
-                List<KeyValuePair> collect = walk.parallel()
-                        .filter(Files::isRegularFile)
-                        .flatMap(path -> getFileWordCount(path.toFile(), pattern).entrySet().stream())
-                        .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingLong(Map.Entry::getValue)))
-                        .entrySet().stream()
-                        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                        .limit(10)
-                        .map(stringLongEntry -> new KeyValuePair(stringLongEntry.getKey(), stringLongEntry.getValue()))
-                        .toList();
-                System.out.println(collect);
-            } catch (IOException e) {
-                throw new WordAnalyticException(e);
-            }
-        });
 
+        Path target = Paths.get(args[0]);
+
+        if (Files.notExists(target)) {
+            throw new IllegalArgumentException(String.format("File not found %s", target.toAbsolutePath()));
+        }
+
+        Pattern pattern = Pattern.compile(String.format("(\\b[А-Яа-яA-Za-z][А-Яа-яA-Za-z\\d-]{%s}\\b)", args[1]));
+        try (ForkJoinPool customThreadPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors())) {
+            customThreadPool.submit(() -> {
+                try (Stream<Path> walk = Files.walk(target)) {
+                    List<KeyValuePair> collect = walk.parallel()
+                            .filter(Files::isRegularFile)
+                            .flatMap(path -> getFileWordCount(path.toFile(), pattern).entrySet().stream())
+                            .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingLong(Map.Entry::getValue)))
+                            .entrySet().stream()
+                            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                            .limit(10)
+                            .map(stringLongEntry -> new KeyValuePair(stringLongEntry.getKey(), stringLongEntry.getValue()))
+                            .toList();
+                    System.out.println(collect);
+                } catch (IOException e) {
+                    throw new WordAnalyticException(e);
+                }
+            });
+        }
     }
 }
