@@ -27,6 +27,7 @@ public class WordAnalyticService {
             return walk.toList()
                     .parallelStream()
                     .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toFile().getName().toLowerCase().endsWith(".txt"))
                     .flatMap(path -> fileAnalyzer.getFileWordCount(path.toFile(), pattern).entrySet().stream())
                     .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingLong(Map.Entry::getValue)))
                     .entrySet().stream()
