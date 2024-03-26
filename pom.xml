@@ -23,9 +23,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>Main</mainClass>
+                            <mainClass>ru.agima.testapp.word.Application</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
