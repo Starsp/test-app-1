@@ -1,8 +1,10 @@
 package ru.agima.testapp.word.thread;
 
+import ru.agima.testapp.word.exception.WordAnalyticException;
 import ru.agima.testapp.word.service.WordAnalyticProcessor;
-import ru.agima.testapp.word.util.Analytic;
 
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.Arrays;
 
 public class CustomThreadPool {
@@ -13,18 +15,21 @@ public class CustomThreadPool {
         int threadCount = Runtime.getRuntime().availableProcessors();
         analyticWorkers = new WordAnalyticWorker[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            analyticWorkers[i] = new WordAnalyticWorker(Analytic.getInstance(), processor);
+            analyticWorkers[i] = new WordAnalyticWorker(processor);
             analyticWorkers[i].start();
         }
     }
 
-    public void shutdownAll() {
-        for (WordAnalyticWorker analyticWorker : analyticWorkers) {
-            analyticWorker.shutdownSignal = true;
+    public boolean shutdownAll(Integer value, TemporalUnit timeUnit) {
+        try {
+            Thread.sleep(Duration.of(value, timeUnit));
+        } catch (InterruptedException e) {
+            throw new WordAnalyticException(e);
+        } finally {
+            for (WordAnalyticWorker analyticWorker : analyticWorkers) {
+                analyticWorker.shutdownSignal = true;
+            }
         }
-    }
-
-    public boolean isFinished() {
         return Arrays.stream(analyticWorkers)
                 .allMatch(wordAnalyticWorker -> wordAnalyticWorker.finished);
     }

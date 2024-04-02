@@ -4,7 +4,6 @@ import ru.agima.testapp.word.exception.WordAnalyticException;
 import ru.agima.testapp.word.model.AnalyticRequest;
 import ru.agima.testapp.word.model.AnalyticResult;
 import ru.agima.testapp.word.thread.CustomThreadPool;
-import ru.agima.testapp.word.util.Analytic;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,10 +11,12 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -25,10 +26,13 @@ public class WordAnalyticProcessor {
 
     private final BlockingQueue<List<String>> queue;
     private final int processLimit;
+    private Pattern pattern;
+    private final Map<String, Integer> resultMap;
 
     public WordAnalyticProcessor() {
         this.queue = new LinkedBlockingQueue<>();
         this.processLimit = Runtime.getRuntime().availableProcessors() * 5;
+        this.resultMap = new ConcurrentHashMap<>();
     }
 
     public List<AnalyticResult> analyze(AnalyticRequest request) {
@@ -36,9 +40,7 @@ public class WordAnalyticProcessor {
             throw new IllegalArgumentException(String.format("File not found %s", request.getTarget().toAbsolutePath()));
         }
         System.out.println("STARTED..");
-        Pattern pattern = Pattern.compile(String.format("(\\b[А-Яа-яA-Za-z]*[А-Яа-яA-Za-z\\d-]{%d}\\b)", request.getMinWordLength()));
-        Analytic config = Analytic.getInstance();
-        config.setPattern(pattern);
+        pattern = Pattern.compile(String.format("(\\b[А-Яа-яA-Za-z]*[А-Яа-яA-Za-z\\d-]{%d}\\b)", request.getMinWordLength()));
         CustomThreadPool customThreadPool = new CustomThreadPool(this);
         try (Stream<Path> walk = Files.walk(request.getTarget())) {
             List<Path> collect = walk
@@ -56,9 +58,9 @@ public class WordAnalyticProcessor {
                         }
                         bufferSize += line.length();
                         if (bufferSize >= 100000) {
-                            queue.add(buffer);
+                            queue.add(new ArrayList<>(buffer));
                             bufferSize = 0;
-                            buffer = new ArrayList<>();
+                            buffer.clear();
                         }
                     }
                 }
@@ -68,25 +70,26 @@ public class WordAnalyticProcessor {
         } catch (IOException e) {
             throw new WordAnalyticException(e);
         }
-        while (!customThreadPool.isFinished()) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        customThreadPool.shutdownAll();
-        return config.getResultMap().entrySet().stream()
+        customThreadPool.shutdownAll(2, ChronoUnit.SECONDS);
+        return resultMap.entrySet().stream()
                 .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingLong(Map.Entry::getValue)))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(10)
-                .map(stringLongEntry -> new AnalyticResult(stringLongEntry.getKey(), stringLongEntry.getValue()))
+                .map(result -> new AnalyticResult(result.getKey(), result.getValue()))
                 .toList();
     }
 
 
     public BlockingQueue<List<String>> getQueue() {
         return queue;
+    }
+
+    public Pattern getPattern() {
+        return pattern;
+    }
+
+    public Map<String, Integer> getResultMap() {
+        return resultMap;
     }
 }

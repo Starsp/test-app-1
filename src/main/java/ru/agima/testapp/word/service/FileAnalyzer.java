@@ -1,7 +1,5 @@
 package ru.agima.testapp.word.service;
 
-import ru.agima.testapp.word.util.Analytic;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,8 +8,7 @@ import java.util.regex.Pattern;
 
 public class FileAnalyzer {
 
-    public Map<String, Integer> getFileWordCount(List<String> content) {
-        Pattern pattern = Analytic.getInstance().getPattern();
+    public Map<String, Integer> getFileWordCount(List<String> content, Pattern pattern) {
         Map<String, Integer> result = new LinkedHashMap<>();
         for (String line : content) {
             Matcher matcher = pattern.matcher(line);
