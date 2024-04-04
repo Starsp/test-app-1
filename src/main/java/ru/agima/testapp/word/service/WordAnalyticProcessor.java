@@ -2,7 +2,6 @@ package ru.agima.testapp.word.service;
 
 import ru.agima.testapp.word.exception.WordAnalyticException;
 import ru.agima.testapp.word.model.AnalyticRequest;
-import ru.agima.testapp.word.model.AnalyticResult;
 import ru.agima.testapp.word.thread.CustomThreadPool;
 
 import java.io.BufferedReader;
@@ -19,7 +18,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class WordAnalyticProcessor {
@@ -35,7 +33,7 @@ public class WordAnalyticProcessor {
         this.resultMap = new ConcurrentHashMap<>();
     }
 
-    public List<AnalyticResult> analyze(AnalyticRequest request) {
+    public Map<String, Integer> analyze(AnalyticRequest request) {
         if (Files.notExists(request.getTarget())) {
             throw new IllegalArgumentException(String.format("File not found %s", request.getTarget().toAbsolutePath()));
         }
@@ -54,7 +52,10 @@ public class WordAnalyticProcessor {
                     String line;
                     while ((line = bufferedReader.readLine()) != null) {
                         buffer.add(line);
-                        while (queue.size() >= processLimit) {
+                        for (; ; ) {
+                            if (processLimit > queue.size()) {
+                                break;
+                            }
                         }
                         bufferSize += line.length();
                         if (bufferSize >= 100000) {
@@ -71,13 +72,7 @@ public class WordAnalyticProcessor {
             throw new WordAnalyticException(e);
         }
         customThreadPool.shutdownAll(2, ChronoUnit.SECONDS);
-        return resultMap.entrySet().stream()
-                .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.summingLong(Map.Entry::getValue)))
-                .entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(10)
-                .map(result -> new AnalyticResult(result.getKey(), result.getValue()))
-                .toList();
+        return resultMap;
     }
 
 
