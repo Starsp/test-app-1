@@ -31,8 +31,7 @@ public class FileReader extends Thread {
         try (Stream<Path> sourceRootFolder = Files.walk(resource.getSourceRootFolder())) {
             sourceRootFolder
                     .filter(Files::isRegularFile)
-                    .filter(path -> !path.toFile().getAbsolutePath().contains("$RECYCLE"))
-                    .filter(path -> path.getFileName().toFile().getName().toLowerCase().endsWith(".txt") || path.getFileName().toFile().getName().toLowerCase().endsWith(".xml"))
+                    .filter(path -> path.getFileName().toFile().getName().toLowerCase().endsWith(".txt"))
                     .forEach(this::readFile);
         } catch (IOException e) {
             throw new WordAnalyticException(e);
