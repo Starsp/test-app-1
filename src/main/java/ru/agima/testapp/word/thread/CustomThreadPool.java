@@ -1,7 +1,7 @@
 package ru.agima.testapp.word.thread;
 
 import ru.agima.testapp.word.exception.WordAnalyticException;
-import ru.agima.testapp.word.service.WordAnalyticProcessor;
+import ru.agima.testapp.word.model.FileProcessResource;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
@@ -9,29 +9,30 @@ import java.util.Arrays;
 
 public class CustomThreadPool {
 
-    private final WordAnalyticWorker[] analyticWorkers;
+    private final FileAnalyticWorker[] analyticWorkers;
 
-    public CustomThreadPool(WordAnalyticProcessor processor) {
+    public CustomThreadPool(FileProcessResource resource) {
         int threadCount = Runtime.getRuntime().availableProcessors();
-        analyticWorkers = new WordAnalyticWorker[threadCount];
+        analyticWorkers = new FileAnalyticWorker[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            analyticWorkers[i] = new WordAnalyticWorker(processor);
+            analyticWorkers[i] = new FileAnalyticWorker(resource);
             analyticWorkers[i].start();
         }
     }
 
-    public boolean shutdownAll(Integer value, TemporalUnit timeUnit) {
+    public void awaitTermination(Integer value, TemporalUnit timeUnit) {
         try {
             Thread.sleep(Duration.of(value, timeUnit));
         } catch (InterruptedException e) {
             throw new WordAnalyticException(e);
         } finally {
-            for (WordAnalyticWorker analyticWorker : analyticWorkers) {
+            for (FileAnalyticWorker analyticWorker : analyticWorkers) {
                 analyticWorker.shutdownSignal = true;
             }
         }
-        return Arrays.stream(analyticWorkers)
-                .allMatch(wordAnalyticWorker -> wordAnalyticWorker.finished);
+        Arrays.stream(analyticWorkers)
+                .filter(fileAnalyticWorker -> !fileAnalyticWorker.finished)
+                .forEach(Thread::interrupt);
     }
 
 }
